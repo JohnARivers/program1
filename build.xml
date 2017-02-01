@@ -1,3 +1,7 @@
+<!-- John Rivers -->
+<!-- 1/31/16 -->
+<!-- File allows for single command, 'ant' to compile all files in folder -->
+
 <project default = "compile">
 
 	<target name = "compile">

@@ -1,4 +1,15 @@
-/**
+/*
+ John Rivers
+ 1/31/16
+ Modified program:
+ 1) To serve html files. If the GET request refers to a correct filename
+  then the content of the file is delivered.
+ 2) If the request provides an incorrect filename string, server responds
+  with an error. This changes the response status and the html message body.
+ 3) Served html files outputs proper information for the tags
+  <cs371date> and <3cs71server>
+
+* 
 * Web worker: an object of this class executes in its own new thread
 * to receive and respond to a single HTTP request. After the constructor
 * the object executes on its "run" method, and leaves when it is done.
@@ -80,24 +91,25 @@ private String readHTTPRequest(InputStream is)
    BufferedReader r = new BufferedReader(new InputStreamReader(is));
    while (true) {
       try {
-         while (!r.ready()) Thread.sleep(1);
-         line = r.readLine();
-
-         System.err.println("Request line: ("+line+")");
-
-	 String holdGetLine = line.substring(0,3);
-	 if(holdGetLine.equals("GET")){
-		holdPath = line.substring(5);
-		holdPath = holdPath.substring(0, holdPath.indexOf(" "));
-		System.err.println("HOLD PATH IS: " + holdPath);
-	 } // end if
-
+        while (!r.ready()) Thread.sleep(1);
+        line = r.readLine();
+        System.err.println("Request line: ("+line+")");
+        // must remove the first characters to examine potential filename
+	    String holdGetLine = line.substring(0,3);
+		// checks for GET line that contains potential filename
+	    if(holdGetLine.equals("GET")){
+		   // isolates and prints the file path
+		   holdPath = line.substring(5);
+		   holdPath = holdPath.substring(0, holdPath.indexOf(" "));
+		   System.err.println("HOLD PATH IS: " + holdPath);
+	   } // end if
          if (line.length()==0) break;
       } catch (Exception e) {
          System.err.println("Request error: "+e);
          break;
       }
    }
+   // returns string with filename
    return holdPath;
 }
 
@@ -111,7 +123,7 @@ private void writeHTTPHeader(OutputStream os, String contentType, String path) t
    Date d = new Date();
    DateFormat df = DateFormat.getDateTimeInstance();
    df.setTimeZone(TimeZone.getTimeZone("GMT"));
-
+   // need to check if a correct filename has been entered
    File f = new File(path);
    if(f.exists() && !f.isDirectory()){
       os.write("HTTP/1.1 200 OK\n".getBytes());
@@ -127,7 +139,7 @@ private void writeHTTPHeader(OutputStream os, String contentType, String path) t
       os.write("\n\n".getBytes()); // HTTP header ends with 2 newlines
    } // end if
 
-   // 404 status
+   // changes status to 404 if file not found
    else{
       os.write("HTTP/1.1 404 Not Found\n".getBytes());
       os.write("Date: ".getBytes());
@@ -150,34 +162,38 @@ private void writeHTTPHeader(OutputStream os, String contentType, String path) t
 * @param os is the OutputStream object to write to
 **/
 private void writeContent(OutputStream os, String path) throws Exception
-{ 
-   try{
+{
+	// try catch if correct filename is not entered
+	try{
+	  // used to read path string
       BufferedReader br = new BufferedReader(new FileReader(path));
       String line = null;
-
+      // need Date object for outputing information for date tags
       Date d = new Date();
       DateFormat df = DateFormat.getDateTimeInstance();
       df.setTimeZone(TimeZone.getTimeZone("GMT"));
    
+      // reads until end of line string
       while((line = br.readLine()) != null){
-
+		 // checks if date tag exists in file. outputs date if exists.
          if(line.equals("<cs371date>")){
             os.write("<br> Time: ".getBytes());
             os.write((df.format(d)).getBytes());
             os.write("<br>".getBytes());
          } // end if
-
+         // checks if server tag exists in file. outputs server name if exists.
          if(line.equals("<cs371server>")){
             os.write("<br>".getBytes());
             os.write("Server: John's very own server\n".getBytes());
             os.write("<br>".getBytes());
          } // end if
-
+         // writes html file to browser
          os.write(line.getBytes());
       } // end while
 
    } // end try
   
+   // outputs HTTP 404 error to browser if file doesn't exist
    catch(FileNotFoundException exception)
    {
         os.write("<h3>HTTP 404 Not Found</h3>\n".getBytes());
