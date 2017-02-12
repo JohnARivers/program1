@@ -8,7 +8,6 @@
   with an error. This changes the response status and the html message body.
  3) Served html files outputs proper information for the tags
   <cs371date> and <3cs71server>
-
 * 
 * Web worker: an object of this class executes in its own new thread
 * to receive and respond to a single HTTP request. After the constructor
@@ -44,6 +43,33 @@ import java.io.FileReader;
 import java.io.IOException;
 
 import java.util.Date;
+
+
+
+import javax.swing.*;  
+import java.net.*; 
+import java.awt.image.*;
+import javax.imageio.*;
+import java.io.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
+
+
+
+
+import java.awt.FlowLayout;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+
+
 
 public class WebWorker implements Runnable
 {
@@ -163,33 +189,86 @@ private void writeHTTPHeader(OutputStream os, String contentType, String path) t
 **/
 private void writeContent(OutputStream os, String path) throws Exception
 {
-	// try catch if correct filename is not entered
-	try{
-	  // used to read path string
-      BufferedReader br = new BufferedReader(new FileReader(path));
-      String line = null;
-      // need Date object for outputing information for date tags
-      Date d = new Date();
-      DateFormat df = DateFormat.getDateTimeInstance();
-      df.setTimeZone(TimeZone.getTimeZone("GMT"));
-   
-      // reads until end of line string
-      while((line = br.readLine()) != null){
+    // try catch if correct filename is not entered
+    try{
+    // used to read path string
+    BufferedReader br = new BufferedReader(new FileReader(path));
+    String line = null;
+      
+    String fileName = path.substring(0, path.indexOf("."));
+    String fileType = path.substring(path.indexOf(".")+1, path.length());
+    //  os.write(fileName.getBytes());
+    //  os.write(fileType.getBytes());
+    
+    if(fileType.equals("jpeg") || fileType.equals("gif") || fileType.equals("png")){
+    
+    /*
+      BufferedImage image = ImageIO.read(new File(path));
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      
+      ImageIO.write(image, fileType, baos);
+      baos.flush();
+      
+      byte[] bytes = baos.toByteArray();
+      baos.close();
+      
+      DataOutputStream dos = new DataOutputStream(os);
+      
+      dos.writeInt(bytes.length);
+      dos.write(bytes, 0, bytes.length);
+      
+      dos.close();
+      os.close();
+    
+    
+    /*
+      File file = new File(path);
+      long length = file.length();
+      byte[] bytes = new byte[*1024];
+      
+      int i;
+      while((i = is.read(bytes)) > 0)
+        os.write(bytes, 0, i);
+    
+    */
+        BufferedImage image = ImageIO.read(new File(path));
+        ImageIcon icon = new ImageIcon(image);
+        JFrame frame = new JFrame();
+        frame.setLayout(new FlowLayout());
+        frame.setSize(200,300);
+        JLabel label = new JLabel();
+        label.setIcon(icon);
+        frame.add(label);
+        frame.setVisible(true);
+    //    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        
+        
+    } // end if
+      
+      // not a graphic file
+      else{
+        // need Date object for outputing information for date tags
+        Date d = new Date();
+        DateFormat df = DateFormat.getDateTimeInstance();
+        df.setTimeZone(TimeZone.getTimeZone("GMT"));
+        // reads until end of line string
+        while((line = br.readLine()) != null){
 		 // checks if date tag exists in file. outputs date if exists.
-         if(line.equals("<cs371date>")){
-            os.write("<br> Time: ".getBytes());
-            os.write((df.format(d)).getBytes());
-            os.write("<br>".getBytes());
-         } // end if
-         // checks if server tag exists in file. outputs server name if exists.
-         if(line.equals("<cs371server>")){
-            os.write("<br>".getBytes());
-            os.write("Server: John's very own server\n".getBytes());
-            os.write("<br>".getBytes());
-         } // end if
-         // writes html file to browser
-         os.write(line.getBytes());
-      } // end while
+          if(line.equals("<cs371date>")){
+             os.write("<br> Time: ".getBytes());
+             os.write((df.format(d)).getBytes());
+             os.write("<br>".getBytes());
+          } // end if
+          // checks if server tag exists in file. outputs server name if exists.
+          if(line.equals("<cs371server>")){
+             os.write("<br>".getBytes());
+             os.write("Server: John's very own server\n".getBytes());
+             os.write("<br>".getBytes());
+          } // end if
+          // writes html file to browser
+          os.write(line.getBytes());
+        } // end while
+      } // end else
 
    } // end try
   
