@@ -44,33 +44,6 @@ import java.io.IOException;
 
 import java.util.Date;
 
-
-
-import javax.swing.*;  
-import java.net.*; 
-import java.awt.image.*;
-import javax.imageio.*;
-import java.io.*;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import javax.imageio.ImageIO;
-
-
-
-
-import java.awt.FlowLayout;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-
-
-
 public class WebWorker implements Runnable
 {
 
@@ -94,11 +67,30 @@ public void run()
 {
    System.err.println("Handling connection...");
    try {
-      InputStream  is = socket.getInputStream();
+      InputStream is = socket.getInputStream();
       OutputStream os = socket.getOutputStream();
       String path = readHTTPRequest(is);
-      writeHTTPHeader(os,"text/html", path);
-      writeContent(os, path);  // need to modify for part 1
+      
+      //String fileName = path.substring(0, path.indexOf("."));
+      String fileType = path.substring(path.indexOf(".")+1, path.length());
+      
+   //   System.out.println("PRINTING AS STRING: " + contentType);
+   
+      System.out.println("FILE TYPE IS " + fileType);
+
+      if(fileType.equals("jpeg"))
+         writeHTTPHeader(os,"image/jpeg", path);
+         
+      else if(fileType.equals("gif"))
+         writeHTTPHeader(os,"image/gif", path);
+         
+      else if(fileType.equals("png"))
+         writeHTTPHeader(os,"image/png", path);
+      
+      else if(fileType.equals("html"))
+         writeHTTPHeader(os,"text/html", path);
+        
+      writeContent(os, path, fileType);
       os.flush();
       socket.close();
    } catch (Exception e) {
@@ -124,10 +116,10 @@ private String readHTTPRequest(InputStream is)
 	    String holdGetLine = line.substring(0,3);
 		// checks for GET line that contains potential filename
 	    if(holdGetLine.equals("GET")){
-		   // isolates and prints the file path
-		   holdPath = line.substring(5);
-		   holdPath = holdPath.substring(0, holdPath.indexOf(" "));
-		   System.err.println("HOLD PATH IS: " + holdPath);
+               // isolates and prints the file path
+		holdPath = line.substring(5);
+		holdPath = holdPath.substring(0, holdPath.indexOf(" "));
+		System.err.println("HOLD PATH IS: " + holdPath);
 	   } // end if
          if (line.length()==0) break;
       } catch (Exception e) {
@@ -187,66 +179,31 @@ private void writeHTTPHeader(OutputStream os, String contentType, String path) t
 * be done after the HTTP header has been written out.
 * @param os is the OutputStream object to write to
 **/
-private void writeContent(OutputStream os, String path) throws Exception
+private void writeContent(OutputStream os, String path, String fileType) throws Exception
 {
     // try catch if correct filename is not entered
     try{
     // used to read path string
     BufferedReader br = new BufferedReader(new FileReader(path));
     String line = null;
-      
-    String fileName = path.substring(0, path.indexOf("."));
-    String fileType = path.substring(path.indexOf(".")+1, path.length());
-    //  os.write(fileName.getBytes());
-    //  os.write(fileType.getBytes());
     
     if(fileType.equals("jpeg") || fileType.equals("gif") || fileType.equals("png")){
     
-    /*
-      BufferedImage image = ImageIO.read(new File(path));
-      ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      
-      ImageIO.write(image, fileType, baos);
-      baos.flush();
-      
-      byte[] bytes = baos.toByteArray();
-      baos.close();
-      
-      DataOutputStream dos = new DataOutputStream(os);
-      
-      dos.writeInt(bytes.length);
-      dos.write(bytes, 0, bytes.length);
-      
-      dos.close();
-      os.close();
-    
-    
-    /*
-      File file = new File(path);
-      long length = file.length();
-      byte[] bytes = new byte[*1024];
-      
-      int i;
-      while((i = is.read(bytes)) > 0)
-        os.write(bytes, 0, i);
-    
-    */
-        BufferedImage image = ImageIO.read(new File(path));
-        ImageIcon icon = new ImageIcon(image);
-        JFrame frame = new JFrame();
-        frame.setLayout(new FlowLayout());
-        frame.setSize(200,300);
-        JLabel label = new JLabel();
-        label.setIcon(icon);
-        frame.add(label);
-        frame.setVisible(true);
-    //    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        
+       File file = new File(path);
+       FileInputStream is = new FileInputStream(file);
+       byte [] data = new byte[(int) file.length()];
+       is.read(data);
+       is.close();
+       
+       DataOutputStream dataOS = new DataOutputStream(os);
+       dataOS.write(data);
+       dataOS.close();
         
     } // end if
       
       // not a graphic file
-      else{
+      if(fileType.equals("html")){
+        System.out.println("I GOT THIS FAR!");
         // need Date object for outputing information for date tags
         Date d = new Date();
         DateFormat df = DateFormat.getDateTimeInstance();
@@ -265,17 +222,22 @@ private void writeContent(OutputStream os, String path) throws Exception
              os.write("Server: John's very own server\n".getBytes());
              os.write("<br>".getBytes());
           } // end if
+          // if html file contains an image
+         // String lineStart = line.substring(0, 3);
+          if(line.length() >= 3 && (line.substring(0,3)).equals("<img")){
+             os.write("image here!".getBytes());
+          }
           // writes html file to browser
           os.write(line.getBytes());
         } // end while
-      } // end else
+      } // end if
 
    } // end try
   
    // outputs HTTP 404 error to browser if file doesn't exist
    catch(FileNotFoundException exception)
    {
-        os.write("<h3>HTTP 404 Not Found</h3>\n".getBytes());
+        os.write("HTTP 404 Not Found\n".getBytes());
    }
 }
 

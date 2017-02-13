@@ -6,7 +6,15 @@
 
 	<target name = "compile">
 	<javac srcdir = "." />
-
 	</target>
+
+    <target name="run">
+    <java classname="JavaServer">
+       <classpath>
+           <pathelement location="."/>
+        </classpath>
+        <arg value="xdg-open http://localhost:8080/test/test1.html" />
+    </java>
+</target>
 
 </project>
