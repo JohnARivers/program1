@@ -2,19 +2,15 @@
 <!-- 1/31/16 -->
 <!-- File allows for single command, 'ant' to compile all files in folder -->
 
-<project default = "compile">
+<project name="server" default = "compile">
 
-	<target name = "compile">
-	<javac srcdir = "." />
+   <target name = "compile">
+	<javac srcdir = "."/>
 	</target>
 
-    <target name="run">
-    <java classname="JavaServer">
-       <classpath>
-           <pathelement location="."/>
-        </classpath>
-        <arg value="xdg-open http://localhost:8080/test/test1.html" />
-    </java>
+    <target name="run" depends="compile">
+    <java fork="true" classname="WebServer" dir="./test">
+</java>
 </target>
 
 </project>
