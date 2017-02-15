@@ -1,16 +1,30 @@
 <!-- John Rivers -->
-<!-- 1/31/16 -->
+<!-- 2/14/17 -->
 <!-- File allows for single command, 'ant' to compile all files in folder -->
+<!-- Added command 'ant run' to run the program in the test folder -->
 
-<project name="server" default = "compile">
+<project name="WebServer" default="compile" basedir=".">
 
-   <target name = "compile">
-	<javac srcdir = "."/>
-	</target>
+    <target name="clean">
+        <delete dir="build"/>
+    </target>
 
-    <target name="run" depends="compile">
-    <java fork="true" classname="WebServer" dir="./test">
-</java>
-</target>
+    <target name="compile" depends="clean">
+        <mkdir dir="build/classes"/>
+        <javac srcdir="." destdir="build/classes"/>
+    </target>
+
+    <target name="jar" depends="compile">
+	   <mkdir dir="build/jar"/>
+         <jar destfile="build/jar/WebServer.jar" basedir="build/classes">
+            <manifest>
+                <attribute name="Main-Class" value="WebServer"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="run" depends="jar">
+        <java dir="test" jar="build/jar/WebServer.jar" fork="true"/>
+    </target>
 
 </project>

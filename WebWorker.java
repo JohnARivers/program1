@@ -1,6 +1,6 @@
 /*
  John Rivers
- 1/31/16
+ 1/31/17
  Modified program:
  1) To serve html files. If the GET request refers to a correct filename
   then the content of the file is delivered.
@@ -8,6 +8,13 @@
   with an error. This changes the response status and the html message body.
  3) Served html files outputs proper information for the tags
   <cs371date> and <3cs71server>
+  
+  2/14/17
+  Modified program:
+  1) Serve image files in the GIF, JPEG, and PNG formats.
+   Reports the "Content-Type" in the response head as "image/gif", "image/jpeg", or "image/png" respectively,
+   and then delivers the exact binary bytes from the image file as the response content.
+   To do this, the program opens and reads the file in a binary mode.
 * 
 * Web worker: an object of this class executes in its own new thread
 * to receive and respond to a single HTTP request. After the constructor
@@ -71,13 +78,12 @@ public void run()
       OutputStream os = socket.getOutputStream();
       String path = readHTTPRequest(is);
       
-      //String fileName = path.substring(0, path.indexOf("."));
+      // identifies file type by creating a substring after the '.' in the file name
+      // identifying the MIME type would be another alternative method
       String fileType = path.substring(path.indexOf(".")+1, path.length());
-      
-   //   System.out.println("PRINTING AS STRING: " + contentType);
    
-      System.out.println("FILE TYPE IS " + fileType);
-
+      // if statements to write header depending on the filetype
+      // sends the identified file type as a parameter to writeHTTPHeader
       if(fileType.equals("jpeg"))
          writeHTTPHeader(os,"image/jpeg", path);
          
@@ -148,9 +154,7 @@ private void writeHTTPHeader(OutputStream os, String contentType, String path) t
       os.write("Date: ".getBytes());
       os.write((df.format(d)).getBytes());
       os.write("\n".getBytes());
-      os.write("Server: John's very own server\n".getBytes());
-      //os.write("Last-Modified: Wed, 08 Jan 2003 23:11:55 GMT\n".getBytes());
-      //os.write("Content-Length: 438\n".getBytes()); 
+      os.write("Server: John's very own server\n".getBytes()); 
       os.write("Connection: close\n".getBytes());
       os.write("Content-Type: ".getBytes());
       os.write(contentType.getBytes());
@@ -164,8 +168,6 @@ private void writeHTTPHeader(OutputStream os, String contentType, String path) t
       os.write((df.format(d)).getBytes());
       os.write("\n".getBytes());
       os.write("Server: John's very own server\n".getBytes());
-      //os.write("Last-Modified: Wed, 08 Jan 2003 23:11:55 GMT\n".getBytes());
-      //os.write("Content-Length: 438\n".getBytes()); 
       os.write("Connection: close\n".getBytes());
       os.write("Content-Type: ".getBytes());
       os.write(contentType.getBytes());
@@ -187,21 +189,26 @@ private void writeContent(OutputStream os, String path, String fileType) throws 
     BufferedReader br = new BufferedReader(new FileReader(path));
     String line = null;
     
+    // if statement for processing image files
     if(fileType.equals("jpeg") || fileType.equals("gif") || fileType.equals("png")){
     
+       // need to open file and process using FileInputStream
        File file = new File(path);
        FileInputStream is = new FileInputStream(file);
+       // byte array for storing image data
        byte [] data = new byte[(int) file.length()];
+       // FileInputStream reads image bytes
        is.read(data);
        is.close();
        
+       // need to write image using DataOutputStream
        DataOutputStream dataOS = new DataOutputStream(os);
        dataOS.write(data);
        dataOS.close();
         
     } // end if
       
-      // not a graphic file
+      // if statement for html file, not a graphic file
       if(fileType.equals("html")){
         System.out.println("I GOT THIS FAR!");
         // need Date object for outputing information for date tags
@@ -222,8 +229,7 @@ private void writeContent(OutputStream os, String path, String fileType) throws 
              os.write("Server: John's very own server\n".getBytes());
              os.write("<br>".getBytes());
           } // end if
-          // if html file contains an image
-         // String lineStart = line.substring(0, 3);
+          // if html file contains an embedded image
           if(line.length() >= 3 && (line.substring(0,3)).equals("<img")){
              os.write("image here!".getBytes());
           }
